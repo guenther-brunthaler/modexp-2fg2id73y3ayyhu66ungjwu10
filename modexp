@@ -50,35 +50,27 @@ awk -f - -- "$@" << EOF && exit || false || exit
 		}
 	}
 
+	# <dst> as well as <add> must be less then <mod>.
 	function vmodsum(dst, add, mod    , i, n, sum, carry, borrow) {
 		if (src["n"] > (n= mod["n"])) n= src["n"]
 		if (n > dst["n"]) dst["n"]= n; else n= dst["n"]
-		#print "n= " n
 		for (carry= borrow= i= 0; i < n; ++i) {
-			#printf "add dst[%u] + src[%u] + carry" \
-			#	" == %.0f + %.0f + %u\n" \
-			#	, i, i, dst[i], add[i], carry
-			sum= dst[i] + add[i] + carry
-			#printf "sum = %.0f\n", sum
-			if (carry= sum >= vmodulus) {
+			if ( \
+				carry= (sum= dst[i] + add[i] + carry) \
+				>= vmodulus \
+			) {
 				sum-= vmodulus
-			#	printf "reduce to %.0f, carry= %u\n" \
-			#		, sum, carry
 			}
 			dst[i]= sum
 			borrow= (sum-= mod[i] - borrow) < 0;
 		}
 		if (!borrow) {
 			for (borrow= i= 0; i < n; ++i) {
-				#printf "add dst[%u] + src[%u] + carry" \
-				#	" == %.0f + %.0f + %u\n" \
-				#	, i, i, dst[i], add[i], carry
-				#printf "sum = %.0f\n", sum
-				borrow= (sum= dst[i] - mod[i] - borrow) < 0;
-				if (borrow) {
+				if ( \
+					borrow \
+					= (sum= dst[i] - mod[i] - borrow) < 0 \
+				) {
 					sum+= vmodulus
-				#	printf "reduce to %.0f, carry= %u\n" \
-				#		, sum, carry
 				}
 				dst[i]= sum
 			}
@@ -133,11 +125,17 @@ awk -f - -- "$@" << EOF && exit || false || exit
 	}
 
 	BEGIN {
-		if (ARGC < 2) die("Specify numbers to add!")
+		if (ARGC < 3) {
+			die( \
+				"Specify modulus fist, then the numbers to" \
+				" add modulo that modulus!" \
+			)
+		}
+		vstr2v(mod, ARGV[1])
 		vinit(sum, 0)
-		for (i= 1; i < ARGC; ++i) {
-			vstr2v(a, ARGV[i])
-			vadd(sum, a)
+		for (i= 2; i < ARGC; ++i) {
+			vstr2v(add, ARGV[i])
+			vmodsum(sum, add, mod)
 		}
 		print "sum = " v2str(sum)
 	}

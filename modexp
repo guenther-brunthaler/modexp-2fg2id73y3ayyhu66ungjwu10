@@ -1,0 +1,131 @@
+#! /bin/sh
+set -e
+test 'test $? = 0 || echo "$0 failed!" >& 2'
+awk -f - -- "$@" << EOF && exit || false || exit
+	function vinternal() {
+		for (vmodulus= 1; vmodulus + 1 > vmodulus; ) {
+			vmodulus+= vmodulus
+		}
+		vmodulus*= 0.5 # First bit is only implicit.
+	}
+
+	function vinit(v    , uint) {
+		if (!vmodulus) vinternal()
+		v["n"]= 1
+		v[0]= uint
+	}
+	
+	function vdump(v    , i, n) {
+		n= v["n"]
+		for (i= 0; i < n; ++i) printf "[%u]= %.0f\n", i, v[i]
+	}
+	
+	function vassign(dst, src    , i, ns, nd) {
+		nd= dst["n"]; ns= src["n"]
+		for (i= 0; i < ns; ++i) dst[i]= src[i]
+		while (i < nd) delete dst[i++]
+		dst["n"]= ns
+	}
+
+	function vadd(dst, add    , i, ns, nd, sum, carry) {
+		if ((ns= add["n"]) > (nd= dst["n"])) dst["n"]= nd= ns
+		#print "nd= " nd
+		for (carry= i= 0; i < nd; ++i) {
+			#printf "add dst[%u] + src[%u] + carry" \
+			#	" == %.0f + %.0f + %u\n" \
+			#	, i, i, dst[i], add[i], carry
+			sum= dst[i] + add[i] + carry
+			#printf "sum = %.0f\n", sum
+			if (carry= sum >= vmodulus) {
+				sum-= vmodulus
+			#	printf "reduce to %.0f, carry= %u\n" \
+			#		, sum, carry
+			}
+			dst[i]= sum
+		}
+		if (carry) {
+			#print "increase size to " nd + 1
+			dst[nd]= 1
+			dst["n"]= nd + 1
+		} else {
+			#print "not changing size"
+		}
+	}
+	
+	function vnormalize(v    , n, i) {
+		i= n= v["n"]
+		while (i > 0 && v[i - 1] == 0) delete v[--i]
+		if (i < n) v["n"]= i
+	}
+	
+	function v2str(v    , vn, i, j, k, n, o, b, carry, sum) {
+		vnormalize(v); vn= v["n"]
+		n= 0; o[n++]= 0
+		for (i= vn; i--; ) {
+			b= v[i]
+			#printf "b = %.0f\n", b
+			for (j= vmodulus; (j*= 0.5) >= 1; ) {
+				#printf "j= %f\n", j
+				carry= b >= j
+				if (carry) b-= j
+				#printf "new b, carry = %.0f, %u\n", b, carry
+				for (k= 0; k < n; ++k) {
+					sum= o[k]
+					#printf "o[%u]= 2 * o[%u] + carry" \
+					#	" == 2 * %.0f + %u\n" \
+					#	, k, k, sum, carry
+					sum+= sum + carry
+					carry= sum >= 10
+					#printf "sum= %.0f\n", sum
+					if (carry) {
+						sum-= 10
+						#printf "reduce to %.0f," \
+						#	" carry = %u\n" \
+						#	, sum, carry
+					}
+					o[k]= sum
+				}
+				if (carry) {
+					#printf "increasing o[%u]= 1", n
+					o[n++]= 1
+				}
+			}
+		}
+		sum= ""
+		for (k= n; k--; ) sum= sum o[k]
+		return sum
+	}
+
+	function vfib(v, n    , i, u, t) {
+		if (n <= 1) {
+			vinit(v, n)
+			return
+		}
+		vinit(u, i= 0); vinit(v, ++i)
+		for ( ; i < n; ++i) {
+			vassign(t, v)
+			vadd(v, u)
+			vassign(u, t)
+		}
+	}
+
+	function die(msg) {
+		print msg > "/dev/stderr"
+		exit 1
+	}
+
+	BEGIN {
+		if (ARGC != 2) exit 1
+		n= ARGV[1]
+		if (n < 0 || n != int(n)) die("Invalid argument!")
+		vfib(v, n)
+		#vinit(v, 1)
+		#for (i= 1; i < n; ++i) {
+		#	print i ":"
+		#	vadd(v, v)
+			vdump(v)
+		#	print
+		#}
+		print "fib(" n ")= " v2str(v)
+	}
+EOF

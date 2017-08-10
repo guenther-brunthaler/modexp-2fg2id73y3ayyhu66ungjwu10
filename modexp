@@ -52,15 +52,25 @@ awk -f - -- "$@" << EOF && exit || false || exit
 		if (i < n) v["n"]= i
 	}
 
-	# Requirement: ref(dst) != ref(mult).
-	function vmult(dst, mult    , add, i, j, n, b, b0) {
-		vinit(add); vassign(add, dst); vinit(dst, 0);
-		vnormalize(mult); n= mult["n"]
+	function vmult(dst, mult    , add, m, i, j, n, b, b0) {
+		vnormalize(dst); vnormalize(mult)
+		# Ensure <m> becomes the shorter of <dst> and <mult>, and
+		# <add> becomes the longer one.
+		vinit(m); vinit(add)
+		if ((n= mult["n"] - dst["n"]) == 0) {
+			n= mult[mult["n"] - 1] - dst[dst["n"] - 1]
+		}
+		if (n <= 0) {
+			vassign(m, mult); vassign(add, dst)
+		} else {
+			vassign(m, dst); vassign(add, mult)
+		}
+		n= m["n"]; vinit(dst, 0)
 		# Use the schoolbook method because Karatsuba is only faster
 		# for 320+ bit numbers, and we want to work with just 130 bit
 		# numbers eventually.
 		for (i= 0; i < n; ++i) {
-			b= mult[i]
+			b= m[i]
 			for (j= 1; j < vmodulus; j+= j) {
 				b0= b * 0.5
 				if ((b= int(b0)) != b0) {
@@ -91,31 +101,26 @@ awk -f - -- "$@" << EOF && exit || false || exit
 		return !!carry
 	}
 
-	function vpow(dst, ex    , old) {
+	function vpow(dst, ex    , mult) {
 		vnormalize(ex)
 		if (ex["n"] == 1 && ex[0] == 0) {
 			vinit(dst, 1) # dst^0 == 1.
 			return
 		}
-		vinit(old)
+		vinit(mult, 1)
 		# Reduce exponent until dst^1 == dst.
 		while (ex["n"] != 1 || ex[0] != 1) {
-			print "dst= " v2str(dst) ", ex= " v2str(ex)
-			vassign(old, dst)
+			#print "dst= " v2str(dst) ", ex= " v2str(ex)
 			if (vlsr(ex)) {
-				# dst^(ex+1) == dst*(dst^ex)
-				# dst^(2*ex+1) == dst*((dst*dst)^ex)
-				vmult(dst, old)
-				print "first squared: dst= " v2str(dst) ", new ex= " v2str(ex)
-				vmult(dst, old)
-				print "then * ex: dst= " v2str(dst)
-			} else {
-				# dst^(2*ex) == (dst*dst)^ex
-				vmult(dst, old)
-				print "only squared: dst= " v2str(dst) ", new ex= " v2str(ex)
+				# dst^(2*ex+1) == dst*(dst^(2*ex))
+				vmult(mult, dst)
+			#	print "update mult factor= " v2str(mult)
 			}
-			vnormalize(dst)
+			# dst^(2*ex) == (dst*dst)^ex
+			vmult(dst, dst)
+			#print "only squared: dst= " v2str(dst) ", new ex= " v2str(ex)
 		}
+		vmult(dst, mult)
 	}
 
 	# <dst> as well as <add> must be less than <mod>.

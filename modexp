@@ -64,7 +64,7 @@ awk -f - -- "$@" << EOF && exit || false || exit
 		}
 	}
 
-	# <dst> as well as <add> must be less then <mod>.
+	# <dst> as well as <add> must be less than <mod>.
 	function vmodsum(dst, add, mod    , i, n, sum, carry, borrow) {
 		if (src["n"] > (n= mod["n"])) n= src["n"]
 		if (n > dst["n"]) dst["n"]= n; else n= dst["n"]
@@ -90,6 +90,24 @@ awk -f - -- "$@" << EOF && exit || false || exit
 			}
 		}
 	}
+
+	# <dst> as well as <mult> must be less than <mod>.
+	function vmodmult(dst, mult, mod    , add, i, j, n, b, b0) {
+		vinit(add); vassign(add, dst); vinit(dst, 0);
+		vnormalize(mult); n= mult["n"]
+		for (i= 0; i < n; ++i) {
+			b= mult[i]
+			for (j= 1; j < vmodulus; j+= j) {
+				b0= b * 0.5
+				if ((b= int(b0)) != b0) {
+					vmodsum(dst, add, mod)
+					if (!b && i + 1 == n) break
+				}
+				vmodsum(add, add, mod)
+			}
+		}
+	}
+
 	
 	function vnormalize(v    , n, i) {
 		i= n= v["n"]
@@ -149,7 +167,7 @@ awk -f - -- "$@" << EOF && exit || false || exit
 		vinit(prod, 1)
 		for (i= 2; i < ARGC; ++i) {
 			vstr2v(mult, ARGV[i])
-			vmult(prod, mult)
+			vmodmult(prod, mult, mod)
 		}
 		print "product = " v2str(prod)
 	}

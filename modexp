@@ -70,7 +70,6 @@ $awk -f - -- "$@" << EOF || false
 		for (vmodulus= 1; vmodulus + 1 > vmodulus; ) {
 			vmodulus+= vmodulus
 		}
-		vmodulus*= 0.5 # First bit is only implicit.
 		vshiftin= vmodulus * 0.5 # The bit shifted in by vlsr().
 		valphabet= "0123456789abcdefghijklmnopqrstuvwxyz"
 		al= length(valphabet)

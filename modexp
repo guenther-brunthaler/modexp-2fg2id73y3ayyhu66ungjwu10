@@ -2,7 +2,7 @@
 set -e
 exit_version() {
 	cat << EOF; exit # Text width: 66 columns.
-$APPLICATION_NAME Version 2017.222
+$APPLICATION_NAME Version 2017.222.1
 
 Copyright (c) 2017 Guenther Brunthaler. All rights reserved.
 
@@ -48,7 +48,7 @@ override the base individually:
 EOF
 }
 
-trap 'test $? = 0 || echo "$0 failed!" >& 2' 0
+trap 'test $? = 0 || echo "$0 failed (option -h shows help)!" >& 2' 0
 radix=0
 awk=awk
 while getopts b:A:hV opt
@@ -327,9 +327,7 @@ $awk -f - -- "$@" << EOF || false
 	}
 
 	BEGIN {
-		if (ARGC < 4) {
-			die("Arguments: <base> <exponent> <modulus>!")
-		}
+		if (ARGC != 4) die("Invalid arguments!")
 		vstr2v(x, ARGV[1], $radix)
 		vstr2v(n, ARGV[2], $radix)
 		vstr2v(mod, ARGV[3], $radix)

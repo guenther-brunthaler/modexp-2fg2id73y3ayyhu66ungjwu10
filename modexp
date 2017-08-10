@@ -7,6 +7,7 @@ awk -f - -- "$@" << EOF && exit || false || exit
 			vmodulus+= vmodulus
 		}
 		vmodulus*= 0.5 # First bit is only implicit.
+		vshiftin= vmodulus * 0.5 # The bit shifted in by vlsr().
 	}
 
 	function vinit(v, uint    , i) {
@@ -15,12 +16,12 @@ awk -f - -- "$@" << EOF && exit || false || exit
 		v["n"]= 1
 		v[0]= uint
 	}
-	
+
 	function vdump(v    , i, n) {
 		n= v["n"]
 		for (i= 0; i < n; ++i) printf "[%u]= %.0f\n", i, v[i]
 	}
-	
+
 	function vassign(dst, src    , i, ns, nd) {
 		nd= dst["n"]; ns= src["n"]
 		for (i= 0; i < ns; ++i) dst[i]= src[i]
@@ -45,12 +46,19 @@ awk -f - -- "$@" << EOF && exit || false || exit
 		}
 	}
 
-	# Use the schoolbook method because Karatsuba is only faster for 320+
-	# bit numbers, and we want to work with just 130 bit numbers
-	# eventually.
+	function vnormalize(v    , n, i) {
+		i= n= v["n"]
+		while (i > 1 && v[i - 1] == 0) delete v[--i]
+		if (i < n) v["n"]= i
+	}
+
+	# Requirement: ref(dst) != ref(mult).
 	function vmult(dst, mult    , add, i, j, n, b, b0) {
 		vinit(add); vassign(add, dst); vinit(dst, 0);
 		vnormalize(mult); n= mult["n"]
+		# Use the schoolbook method because Karatsuba is only faster
+		# for 320+ bit numbers, and we want to work with just 130 bit
+		# numbers eventually.
 		for (i= 0; i < n; ++i) {
 			b= mult[i]
 			for (j= 1; j < vmodulus; j+= j) {
@@ -61,6 +69,52 @@ awk -f - -- "$@" << EOF && exit || false || exit
 				}
 				vadd(add, add)
 			}
+		}
+	}
+
+	# Returns the previous least significant bit that has been shifted out.
+	function vlsr(dst    , carry, n, b) {
+		vnormalize(dst)
+		carry= 0
+		for (n= dst["n"]; n--; ) {
+			b= dst[n] * 0.5
+			if (int(b) != b) {
+				b= int(b) + carry
+				carry= vshiftin
+			} else {
+				b+= carry
+				carry= 0
+			}
+			dst[n]= b
+		}
+		vnormalize(dst)
+		return !!carry
+	}
+
+	function vpow(dst, ex    , old) {
+		vnormalize(ex)
+		if (ex["n"] == 1 && ex[0] == 0) {
+			vinit(dst, 1) # dst^0 == 1.
+			return
+		}
+		vinit(old)
+		# Reduce exponent until dst^1 == dst.
+		while (ex["n"] != 1 || ex[0] != 1) {
+			print "dst= " v2str(dst) ", ex= " v2str(ex)
+			vassign(old, dst)
+			if (vlsr(ex)) {
+				# dst^(ex+1) == dst*(dst^ex)
+				# dst^(2*ex+1) == dst*((dst*dst)^ex)
+				vmult(dst, old)
+				print "first squared: dst= " v2str(dst) ", new ex= " v2str(ex)
+				vmult(dst, old)
+				print "then * ex: dst= " v2str(dst)
+			} else {
+				# dst^(2*ex) == (dst*dst)^ex
+				vmult(dst, old)
+				print "only squared: dst= " v2str(dst) ", new ex= " v2str(ex)
+			}
+			vnormalize(dst)
 		}
 	}
 
@@ -108,13 +162,6 @@ awk -f - -- "$@" << EOF && exit || false || exit
 		}
 	}
 
-	
-	function vnormalize(v    , n, i) {
-		i= n= v["n"]
-		while (i > 0 && v[i - 1] == 0) delete v[--i]
-		if (i < n) v["n"]= i
-	}
-	
 	function v2str(v    , vn, i, j, k, n, o, b, carry, sum) {
 		vnormalize(v); vn= v["n"]
 		n= 0; o[n++]= 0
@@ -158,17 +205,12 @@ awk -f - -- "$@" << EOF && exit || false || exit
 
 	BEGIN {
 		if (ARGC < 3) {
-			die( \
-				"Specify modulus fist, then the numbers to" \
-				" add modulo that modulus!" \
-			)
+			die("Arguments: <base> <exponent>!")
 		}
-		vstr2v(mod, ARGV[1])
-		vinit(prod, 1)
-		for (i= 2; i < ARGC; ++i) {
-			vstr2v(mult, ARGV[i])
-			vmodmult(prod, mult, mod)
-		}
-		print "product = " v2str(prod)
+		vstr2v(x, ARGV[1])
+		vstr2v(n, ARGV[2])
+		#vstr2v(mod, ARGV[3])
+		vpow(x, n)
+		print v2str(x)
 	}
 EOF

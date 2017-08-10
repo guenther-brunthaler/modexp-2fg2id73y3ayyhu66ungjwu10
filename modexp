@@ -9,14 +9,9 @@ awk -f - -- "$@" << EOF && exit || false || exit
 		vmodulus*= 0.5 # First bit is only implicit.
 	}
 
-	function vinit(v, uint    , n) {
+	function vinit(v, uint    , i) {
 		if (!vmodulus) vinternal()
-		if ((n= v["n"]) > 1) {
-			for (;;) {
-				delete v[--n]
-				if (n == 1) break
-			}
-		}
+		for (i in v) delete v[i]
 		v["n"]= 1
 		v[0]= uint
 	}
@@ -47,6 +42,25 @@ awk -f - -- "$@" << EOF && exit || false || exit
 		if (carry) {
 			dst[n]= 1
 			dst["n"]= n + 1
+		}
+	}
+
+	# Use the schoolbook method because Karatsuba is only faster for 320+
+	# bit numbers, and we want to work with just 130 bit numbers
+	# eventually.
+	function vmult(dst, mult    , add, i, j, n, b, b0) {
+		vinit(add); vassign(add, dst); vinit(dst, 0);
+		vnormalize(mult); n= mult["n"]
+		for (i= 0; i < n; ++i) {
+			b= mult[i]
+			for (j= 1; j < vmodulus; j+= j) {
+				b0= b * 0.5
+				if ((b= int(b0)) != b0) {
+					vadd(dst, add)
+					if (!b && i + 1 == n) break
+				}
+				vadd(add, add)
+			}
 		}
 	}
 
@@ -132,11 +146,11 @@ awk -f - -- "$@" << EOF && exit || false || exit
 			)
 		}
 		vstr2v(mod, ARGV[1])
-		vinit(sum, 0)
+		vinit(prod, 1)
 		for (i= 2; i < ARGC; ++i) {
-			vstr2v(add, ARGV[i])
-			vmodsum(sum, add, mod)
+			vstr2v(mult, ARGV[i])
+			vmult(prod, mult)
 		}
-		print "sum = " v2str(sum)
+		print "product = " v2str(prod)
 	}
 EOF

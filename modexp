@@ -132,9 +132,6 @@ $awk -f - -- "$@" << EOF || false
 			vassign(m, dst); vassign(add, mult)
 		}
 		n= m["n"]; vinit(dst, 0)
-		# Use the schoolbook method because Karatsuba is only faster
-		# for 320+ bit numbers, and we want to work with just 130 bit
-		# numbers eventually.
 		for (i= 0; i < n; ++i) {
 			b= m[i]
 			for (j= 1; j < vmodulus; j+= j) {
@@ -179,7 +176,7 @@ $awk -f - -- "$@" << EOF || false
 				sum-= vmodulus
 			}
 			dst[i]= sum
-			borrow= (sum-= mod[i] - borrow) < 0;
+			borrow= (sum-= mod[i] - borrow) < 0
 		}
 		if (!borrow) {
 			for (borrow= i= 0; i < n; ++i) {
@@ -209,9 +206,6 @@ $awk -f - -- "$@" << EOF || false
 			vassign(m, dst); vassign(add, mult)
 		}
 		n= m["n"]; vinit(dst, 0)
-		# Use the schoolbook method because Karatsuba is only faster
-		# for 320+ bit numbers, and we want to work with just 130 bit
-		# numbers eventually.
 		for (i= 0; i < n; ++i) {
 			b= m[i]
 			for (j= 1; j < vmodulus; j+= j) {
@@ -258,7 +252,7 @@ $awk -f - -- "$@" << EOF || false
 			die( \
 				"Unsupported output radix base " \
 				uint_radix_opt "!" \
-			);
+			)
 		}
 		vnormalize(v); vn= v["n"]
 		n= 0; o[n++]= 0

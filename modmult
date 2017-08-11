@@ -2,7 +2,7 @@
 set -e
 exit_version() {
 	cat << EOF; exit # Text width: 66 columns.
-$APPLICATION_NAME Version 2017.223
+$APPLICATION_NAME Version 2017.223.1
 
 Copyright (c) 2017 Guenther Brunthaler. All rights reserved.
 
@@ -20,7 +20,7 @@ Calculate (<multiplicand> * <multiplicator>) modulo <modulus>
 with sufficient efficiency even for large numbers, such as those
 required in the poly1305 MAC.
 
-Usage: $APPLICATION_NAME <base> <exponent> <modulus>
+Usage: $APPLICATION_NAME <multiplicand> <multiplicator> <modulus>
 
 Options:
 

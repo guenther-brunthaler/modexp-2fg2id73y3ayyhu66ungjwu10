@@ -1,6 +1,6 @@
 #! /bin/sh
 set -e
-snippet_ext=.txt
+snippet_ext=
 seq_ext=.order
 dup_ext_prefix=.dup
 unit_marker='@'

@@ -17,9 +17,13 @@ trap cleanup 0
 trap 'exit $?' INT TERM QUIT HUP
 
 lib_path_is_default=true
-while getopts o:L:M: opt
+sim_notice=
+only_preview_diffs=false
+while getopts dno:L:M: opt
 do
 	case $opt in
+		d) only_preview_diffs=true;;
+		n) sim_notice="SIMULATION: ";;
 		o) test -d "$OPTARG"; out_dir=$OPTARG;;
 		L)
 			if $lib_path_is_default
@@ -74,7 +78,7 @@ do
 	cf=${of%"$seq_ext"}
 	test "$cf" != "$of"
 	cf=$out_dir/`basename -- "$cf"`
-	echo "Recombining file '$cf'..."
+	echo "${sim_notice}Recombining file '$cf'..."
 	while IFS= read -r unit
 	do
 		if test "$unit_marker"
@@ -84,12 +88,24 @@ do
 		locate_unit
 		cat -- "$uf"
 	done < "$of" > "$TF"
-	if test -f "$cf" && cmp -s -- "$TF" "$cf"
+	if test -f "$cf"
 	then
-		echo "Existing file is up to date - skipping recreation."
-		continue
+		if cmp -s -- "$cf" "$TF"
+		then
+			echo "Existing file is up to date" \
+				" - skipping recreation."
+			continue
+		fi
+		if $only_preview_diffs
+		then
+			diff -u -- "$cf" "$TF" || :
+			continue
+		fi
 	fi
-	cat "$TF" > "$cf"
+	if test -z "$sim_notice"
+	then
+		cat "$TF" > "$cf"
+	fi
 	restored=`expr $restored + 1`
 done
-echo "$restored file(s) has/have been written."
+echo "$sim_notice$restored file(s) has/have been written."

@@ -1,0 +1,5 @@
+		b)
+			expr x"$OPTARG" : x'[1-9][0-9]*$' > /dev/null
+			radix=$OPTARG
+			;;
+		A) awk=$OPTARG;;

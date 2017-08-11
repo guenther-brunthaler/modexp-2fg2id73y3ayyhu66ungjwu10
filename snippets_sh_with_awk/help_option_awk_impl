@@ -1,0 +1,3 @@
+-A <awk_cmd>
+   Invoke <awk_cmd> internally rather than the default "awk". For
+   example, <awk_cmd> could be "busybox awk".

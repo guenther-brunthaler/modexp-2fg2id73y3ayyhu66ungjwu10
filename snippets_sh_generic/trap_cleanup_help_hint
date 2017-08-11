@@ -1,0 +1,1 @@
+trap 'test $? = 0 || echo "$0 failed (option -h shows help)!" >& 2' 0

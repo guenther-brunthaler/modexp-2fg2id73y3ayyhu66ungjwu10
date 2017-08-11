@@ -1,6 +1,18 @@
 header
 help_modsum
-common_options
+help_options_section
+help_option_radix_base
+help_option_awk_impl
+help_option_help_version
+help_desc_varint
+help_end
+trap_cleanup_help_hint
+opt_sh_preset_varint
+opt_sh_preset_awk_impl
+opt_sh_parsing_header_start
+opt_sh_parsing_header_end
+opt_sh_parsing_help_version
+opt_sh_parsing_footer
 embed_awk
 vinternal
 valphabet
@@ -13,6 +25,6 @@ vcmp
 vmodsum
 v2str
 vstr2v
-die
+die_awk
 modsum_main
 eof_embedded

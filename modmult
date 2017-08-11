@@ -1,3 +1,4 @@
+@@header
 #! /bin/sh
 set -e
 exit_version() {
@@ -22,6 +23,7 @@ as those required in the poly1305 MAC.
 
 Usage: $APPLICATION_NAME <multiplicand> \
        [ <multiplicator1> ... ] <modulus>
+@@common_options
 
 Options:
 
@@ -66,7 +68,9 @@ do
 	esac
 done
 shift `expr $OPTIND - 1 || :`
+@@embed_awk
 $awk -f - -- "$@" << EOF || false
+@@vinternal
 	function vinternal(    i, al, c) {
 		for (vmodulus= 1; vmodulus + 1 > vmodulus; ) {
 			vmodulus+= vmodulus
@@ -79,6 +83,7 @@ $awk -f - -- "$@" << EOF || false
 		}
 	}
 
+@@vinit
 	# <uint> may be omitted if <v> will be assigned to before use anyway.
 	function vinit(v, uint    , i) {
 		if (!vmodulus) vinternal()
@@ -87,6 +92,7 @@ $awk -f - -- "$@" << EOF || false
 		v[0]= uint
 	}
 
+@@vassign
 	# Both <dst> and <src> must already be initialized objects.
 	function vassign(dst, src    , i, ns, nd) {
 		nd= dst["n"]; ns= src["n"]
@@ -95,6 +101,7 @@ $awk -f - -- "$@" << EOF || false
 		dst["n"]= ns
 	}
 
+@@vadd
 	function vadd(dst, add    , i, n, sum, carry) {
 		if (add["n"] > (n= dst["n"])) dst["n"]= n= add["n"]
 		for (carry= i= 0; i < n; ++i) {
@@ -112,12 +119,14 @@ $awk -f - -- "$@" << EOF || false
 		}
 	}
 
+@@vnormalize
 	function vnormalize(v    , n, i) {
 		i= n= v["n"]
 		while (i > 1 && v[i - 1] == 0) delete v[--i]
 		if (i < n) v["n"]= i
 	}
 
+@@vmult
 	function vmult(dst, mult    , add, m, i, j, n, b, b0) {
 		vnormalize(dst); vnormalize(mult)
 		# Ensure <m> becomes the shorter of <dst> and <mult>, and
@@ -145,6 +154,7 @@ $awk -f - -- "$@" << EOF || false
 		}
 	}
 
+@@vcmp
 	function vcmp(v1, v2    , i, n, nallz, diff, borrow) {
 		if (v2["n"] > (n= v1["n"])) n= v2["n"]
 		for (nallz= borrow= i= 0; i < n; ++i) {
@@ -156,6 +166,7 @@ $awk -f - -- "$@" << EOF || false
 		return borrow ? -1 : nallz
 	}
 
+@@vmodsum
 	# <dst> as well as <add> must be less than <mod>.
 	function vmodsum(dst, add, mod    , i, n, sum, carry, borrow) {
 		if (add["n"] > (n= mod["n"])) n= add["n"]
@@ -183,6 +194,7 @@ $awk -f - -- "$@" << EOF || false
 		}
 	}
 
+@@vmodmult
 	# <dst> as well as <mult> must be less than <mod>.
 	function vmodmult(dst, mult, mod    , add, m, i, j, n, b, b0) {
 		vnormalize(dst); vnormalize(mult)
@@ -211,6 +223,7 @@ $awk -f - -- "$@" << EOF || false
 		}
 	}
 
+@@v2str
 	function v2str( \
 		v, uint_radix_opt    , \
 		vn, i, j, k, n, o, b, carry, sum \
@@ -250,6 +263,7 @@ $awk -f - -- "$@" << EOF || false
 		return sum
 	}
 
+@@vstr2v
 	function vstr2v(dst, str, uint_radix_opt    , radix, i, sl, c, a) {
 		if (!uint_radix_opt) {
 			if (sub("^0[xX]", "", str)) uint_radix_opt= 16
@@ -286,11 +300,13 @@ $awk -f - -- "$@" << EOF || false
 		}
 	}
 
+@@die
 	function die(msg) {
 		print msg > "/dev/stderr"
 		exit 1 # Will be converted to false.
 	}
 
+@@modmult_main
 	BEGIN {
 		if (ARGC < 3) die("Invalid arguments!")
 		vstr2v(prd, ARGV[1], radix= $radix)
@@ -314,4 +330,5 @@ $awk -f - -- "$@" << EOF || false
 		}
 		print v2str(prd, radix)
 	}
+@@eof_embedded
 EOF

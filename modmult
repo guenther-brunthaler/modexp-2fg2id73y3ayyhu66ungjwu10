@@ -16,11 +16,12 @@ exit_help() {
 	cat << EOF; echo; exit_version # Text width: 66 columns.
 $APPLICATION_NAME - sufficiently efficient modular multiplication
 
-Calculate (<multiplicand> * <multiplicator>) modulo <modulus>
+Calculate (<multiplicand> * <multiplicators>) modulo <modulus>
 with sufficient efficiency even for large numbers, such as those
 required in the poly1305 MAC.
 
-Usage: $APPLICATION_NAME <multiplicand> <multiplicator> <modulus>
+Usage: $APPLICATION_NAME <multiplicand> [ <multiplicator1> \
+       <multiplicator2> ... ] <modulus>
 
 Options:
 
@@ -144,9 +145,20 @@ $awk -f - -- "$@" << EOF || false
 		}
 	}
 
+	function vcmp(v1, v2    , i, n, nallz, diff, borrow) {
+		if (v2["n"] > (n= v1["n"])) n= v2["n"]
+		for (nallz= borrow= i= 0; i < n; ++i) {
+			if (borrow= (diff= v1[i] - v2[i] - borrow) < 0) {
+				diff+= vmodulus
+			}
+			if (diff) nallz= 1
+		}
+		return borrow ? -1 : nallz
+	}
+
 	# <dst> as well as <add> must be less than <mod>.
 	function vmodsum(dst, add, mod    , i, n, sum, carry, borrow) {
-		if (src["n"] > (n= mod["n"])) n= src["n"]
+		if (add["n"] > (n= mod["n"])) n= add["n"]
 		if (n > dst["n"]) dst["n"]= n; else n= dst["n"]
 		for (carry= borrow= i= 0; i < n; ++i) {
 			if ( \
@@ -284,6 +296,12 @@ $awk -f - -- "$@" << EOF || false
 		vstr2v(mnd, ARGV[1], $radix)
 		vstr2v(mtr, ARGV[2], $radix)
 		vstr2v(mod, ARGV[3], $radix)
+		if (vcmp(mnd, mod) >= 0) {
+			die("Multiplicand must be smaller then modulus!")
+		}
+		if (vcmp(mtr, mod) >= 0) {
+			die("Multiplicator must be smaller then modulus!")
+		}
 		vmodmult(mnd, mtr, mod)
 		print v2str(mnd, $radix)
 	}

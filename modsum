@@ -144,9 +144,20 @@ $awk -f - -- "$@" << EOF || false
 		}
 	}
 
+	function vcmp(v1, v2    , i, n, nallz, diff, borrow) {
+		if (v2["n"] > (n= v1["n"])) n= v2["n"]
+		for (nallz= borrow= i= 0; i < n; ++i) {
+			if (borrow= (diff= v1[i] - v2[i] - borrow) < 0) {
+				diff+= vmodulus
+			}
+			if (diff) nallz= 1
+		}
+		return borrow ? -1 : nallz
+	}
+
 	# <dst> as well as <add> must be less than <mod>.
 	function vmodsum(dst, add, mod    , i, n, sum, carry, borrow) {
-		if (src["n"] > (n= mod["n"])) n= src["n"]
+		if (add["n"] > (n= mod["n"])) n= add["n"]
 		if (n > dst["n"]) dst["n"]= n; else n= dst["n"]
 		for (carry= borrow= i= 0; i < n; ++i) {
 			if ( \
@@ -256,6 +267,12 @@ $awk -f - -- "$@" << EOF || false
 		vstr2v(agn, ARGV[1], $radix)
 		vstr2v(add, ARGV[2], $radix)
 		vstr2v(mod, ARGV[3], $radix)
+		if (vcmp(agn, mod) >= 0) {
+			die("Augend must be smaller then modulus!")
+		}
+		if (vcmp(add, mod) >= 0) {
+			die("Addend must be smaller then modulus!")
+		}
 		vmodsum(agn, add, mod)
 		print v2str(agn, $radix)
 	}

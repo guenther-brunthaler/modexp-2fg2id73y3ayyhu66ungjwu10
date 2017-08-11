@@ -1,4 +1,0 @@
--b <base>:
-   Specify a radix base between 2 and 36 for input/output.
-   Defaults to 0 if omitted. The value 0 means automatic input
-   radix base detection and a fixed output radix of 10.

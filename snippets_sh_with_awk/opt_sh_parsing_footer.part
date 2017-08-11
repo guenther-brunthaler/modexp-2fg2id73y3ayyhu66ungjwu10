@@ -1,4 +1,0 @@
-		*) false || exit
-	esac
-done
-shift `expr $OPTIND - 1 || :`

@@ -1,0 +1,16 @@
+[submodule "source_level_linker"]
+	path = source_level_linker
+	url = ./.
+	branch = source_level_linker-cj6qkzi92umbg3jwb5slxhwlh
+[submodule "snippets_sh_generic"]
+	path = snippets_sh_generic
+	url = ./.
+	branch = snippets_sh_generic-ag0e7shzq1rsmriq8exv27c60
+[submodule "snippets_varint_awk"]
+	path = snippets_varint_awk
+	url = ./.
+	branch = snippets_varint_awk-adnqxbnrfclpi7g3y7zn26m1h
+[submodule "snippets_sh_with_awk"]
+	path = snippets_sh_with_awk
+	url = ./.
+	branch = snippets_sh_with_awk-bnmuyfmzwhdbz5tpsqt3ugz20

@@ -16,12 +16,12 @@ exit_help() {
 	cat << EOF; echo; exit_version # Text width: 66 columns.
 $APPLICATION_NAME - sufficiently efficient modular multiplication
 
-Calculate (<multiplicand> * <multiplicators>) modulo <modulus>
-with sufficient efficiency even for large numbers, such as those
-required in the poly1305 MAC.
+Calculate (<multiplicand> * <multiplicator1> * ...) modulo
+<modulus> with sufficient efficiency even for large numbers, such
+as those required in the poly1305 MAC.
 
-Usage: $APPLICATION_NAME <multiplicand> [ <multiplicator1> \
-       <multiplicator2> ... ] <modulus>
+Usage: $APPLICATION_NAME <multiplicand> \
+       [ <multiplicator1> ... ] <modulus>
 
 Options:
 

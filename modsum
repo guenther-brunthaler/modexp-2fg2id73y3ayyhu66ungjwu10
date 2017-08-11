@@ -16,11 +16,11 @@ exit_help() {
 	cat << EOF; echo; exit_version # Text width: 66 columns.
 $APPLICATION_NAME - sufficiently efficient modular addition
 
-Calculate (<augend> * <addend>) modulo <modulus>
+Calculate (<augend> + <addend1> + ...) modulo <modulus>
 with sufficient efficiency even for large numbers, such as those
 required for various cryptographic primitives.
 
-Usage: $APPLICATION_NAME <augend> <addend> <modulus>
+Usage: $APPLICATION_NAME <augend> [ <addend1> ... ] <modulus>
 
 Options:
 

@@ -2,7 +2,7 @@
 set -e
 exit_version() {
 	cat << EOF; exit # Text width: 66 columns.
-$APPLICATION_NAME Version 2017.222.1
+$APPLICATION_NAME Version 2017.223
 
 Copyright (c) 2017 Guenther Brunthaler. All rights reserved.
 
@@ -14,11 +14,11 @@ APPLICATION_NAME=$0
 
 exit_help() {
 	cat << EOF; echo; exit_version # Text width: 66 columns.
-$APPLICATION_NAME - sufficiently efficient modular exponentiation
+$APPLICATION_NAME - sufficiently efficient modular multiplication
 
-Calculate (<base> ** <exponent>) modulo <modulus> with sufficient
-efficiency even for very large numbers, such as those required in
-the Diffie-Hellman key exchange protocol.
+Calculate (<multiplicand> * <multiplicator>) modulo <modulus>
+with sufficient efficiency even for large numbers, such as those
+required in the poly1305 MAC.
 
 Usage: $APPLICATION_NAME <base> <exponent> <modulus>
 
@@ -70,7 +70,6 @@ $awk -f - -- "$@" << EOF || false
 		for (vmodulus= 1; vmodulus + 1 > vmodulus; ) {
 			vmodulus+= vmodulus
 		}
-		vshiftin= vmodulus * 0.5 # The bit shifted in by vlsr().
 		valphabet= "0123456789abcdefghijklmnopqrstuvwxyz"
 		al= length(valphabet)
 		for (i= 1; i <= al; ++i) {
@@ -145,25 +144,6 @@ $awk -f - -- "$@" << EOF || false
 		}
 	}
 
-	# Returns the previous least significant bit that has been shifted out.
-	function vlsr(dst    , carry, n, b) {
-		vnormalize(dst)
-		carry= 0
-		for (n= dst["n"]; n--; ) {
-			b= dst[n] * 0.5
-			if (int(b) != b) {
-				b= int(b) + carry
-				carry= vshiftin
-			} else {
-				b+= carry
-				carry= 0
-			}
-			dst[n]= b
-		}
-		vnormalize(dst)
-		return !!carry
-	}
-
 	# <dst> as well as <add> must be less than <mod>.
 	function vmodsum(dst, add, mod    , i, n, sum, carry, borrow) {
 		if (src["n"] > (n= mod["n"])) n= src["n"]
@@ -217,26 +197,6 @@ $awk -f - -- "$@" << EOF || false
 				vmodsum(add, add, mod)
 			}
 		}
-	}
-
-	# <dst> must be less than <mod>.
-	function vmodexp(dst, ex, mod    , mult) {
-		vnormalize(ex)
-		if (ex["n"] == 1 && ex[0] == 0) {
-			vinit(dst, 1) # dst^0 == 1.
-			return
-		}
-		vinit(mult, 1)
-		# Reduce exponent until dst^1 == dst.
-		while (ex["n"] != 1 || ex[0] != 1) {
-			if (vlsr(ex)) {
-				# dst^(2*ex+1) == dst*(dst^(2*ex))
-				vmodmult(mult, dst, mod)
-			}
-			# dst^(2*ex) == (dst*dst)^ex
-			vmodmult(dst, dst, mod)
-		}
-		vmodmult(dst, mult, mod)
 	}
 
 	function v2str( \
@@ -321,10 +281,10 @@ $awk -f - -- "$@" << EOF || false
 
 	BEGIN {
 		if (ARGC != 4) die("Invalid arguments!")
-		vstr2v(x, ARGV[1], $radix)
-		vstr2v(n, ARGV[2], $radix)
+		vstr2v(mnd, ARGV[1], $radix)
+		vstr2v(mtr, ARGV[2], $radix)
 		vstr2v(mod, ARGV[3], $radix)
-		vmodexp(x, n, mod)
-		print v2str(x, $radix)
+		vmodmult(mnd, mtr, mod)
+		print v2str(mnd, $radix)
 	}
 EOF

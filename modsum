@@ -2,7 +2,7 @@
 set -e
 exit_version() {
 	cat << EOF; exit # Text width: 66 columns.
-$APPLICATION_NAME Version 2017.223
+$APPLICATION_NAME Version 2017.223.2
 
 Copyright (c) 2017 Guenther Brunthaler. All rights reserved.
 
@@ -263,17 +263,26 @@ $awk -f - -- "$@" << EOF || false
 	}
 
 	BEGIN {
-		if (ARGC != 4) die("Invalid arguments!")
-		vstr2v(agn, ARGV[1], $radix)
-		vstr2v(add, ARGV[2], $radix)
-		vstr2v(mod, ARGV[3], $radix)
-		if (vcmp(agn, mod) >= 0) {
-			die("Augend must be smaller then modulus!")
+		if (ARGC < 3) die("Invalid arguments!")
+		vstr2v(sum, ARGV[1], radix= $radix)
+		vstr2v(mod, ARGV[--ARGC], radix)
+		if (vcmp(sum, mod) >= 0) {
+			die( \
+				"Augend " ARGV[1] " must be smaller" \
+				" than modulus " ARGV[ARGC] "!" \
+			)
 		}
-		if (vcmp(add, mod) >= 0) {
-			die("Addend must be smaller then modulus!")
+		for (i= 2; i < ARGC; ++i) {
+			vstr2v(add, ARGV[i], radix)
+			if (vcmp(add, mod) >= 0) {
+				die( \
+					"Addend " ARGV[i] " must be" \
+					" smaller than modulus" \
+					" " ARGV[ARGC] "!" \
+				)
+			}
+			vmodsum(sum, add, mod)
 		}
-		vmodsum(agn, add, mod)
-		print v2str(agn, $radix)
+		print v2str(sum, radix)
 	}
 EOF

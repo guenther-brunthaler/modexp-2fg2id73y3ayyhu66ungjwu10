@@ -2,7 +2,7 @@
 set -e
 exit_version() {
 	cat << EOF; exit # Text width: 66 columns.
-$APPLICATION_NAME Version 2017.222.1
+$APPLICATION_NAME Version 2017.223.2
 
 Copyright (c) 2017 Guenther Brunthaler. All rights reserved.
 
@@ -336,10 +336,10 @@ $awk -f - -- "$@" << EOF || false
 		vstr2v(n, ARGV[2], $radix)
 		vstr2v(mod, ARGV[3], $radix)
 		if (vcmp(x, mod) >= 0) {
-			die("Base must be smaller then modulus!")
+			die("Base must be smaller than modulus!")
 		}
 		if (vcmp(n, mod) >= 0) {
-			die("Exponent must be smaller then modulus!")
+			die("Exponent must be smaller than modulus!")
 		}
 		vmodexp(x, n, mod)
 		print v2str(x, $radix)

@@ -6,11 +6,11 @@
 	path = snippets_sh_generic
 	url = ./.
 	branch = snippets_sh_generic-ag0e7shzq1rsmriq8exv27c60
-[submodule "snippets_varint_awk"]
-	path = snippets_varint_awk
-	url = ./.
-	branch = snippets_varint_awk-adnqxbnrfclpi7g3y7zn26m1h
 [submodule "snippets_sh_with_awk"]
 	path = snippets_sh_with_awk
 	url = ./.
 	branch = snippets_sh_with_awk-bnmuyfmzwhdbz5tpsqt3ugz20
+[submodule "snippets_awk_varint"]
+	path = snippets_awk_varint
+	url = ./.
+	branch = snippets_awk_varint-adnqxbnrfclpi7g3y7zn26m1h
